@@ -9,9 +9,9 @@ public class VotingMachine extends Agent
 	
 	private Hashtable candidates;
 	
-	private class Candidates {
+	private class CandidatesList {
 		
-		Candidates(){
+		CandidatesList(){
 			candidates = new Hashtable();
 			candidates.put("Bolsonaro", 0);
 			candidates.put("Ciro", 0);
@@ -19,6 +19,26 @@ public class VotingMachine extends Agent
 		}
 	}
 	
+	private class Candidate {
+		
+		private int numeroVotos;
+		private String name;
+		
+		public int getNumeroVotos() {
+			return numeroVotos;
+		}
+		public void setNumeroVotos(int numeroVotos) {
+			this.numeroVotos = numeroVotos;
+		}
+		
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+	}
 	private static final long serialVersionUID = -3657633911205663525L;
 	
 	
@@ -82,7 +102,7 @@ public class VotingMachine extends Agent
   protected void setup() 
   {
 	  System.out.println("Initializing the system");
-	  new Candidates();
+	  new CandidatesList();
 	  receiveVotes rv = new receiveVotes(this);
 	  addBehaviour(rv);
   }
