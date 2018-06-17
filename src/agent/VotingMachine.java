@@ -6,44 +6,15 @@ import java.util.*;
 
 public class VotingMachine extends Agent
 {	
-	
-	private Hashtable candidates;
-	
-	private class CandidatesList {
-		
-		CandidatesList(){
-			candidates = new Hashtable();
-			candidates.put("Bolsonaro", 0);
-			candidates.put("Ciro", 0);
-			candidates.put("Meirelles", 0);
-		}
-	}
-	
-	private class Candidate {
-		
-		private int numeroVotos;
-		private String name;
-		
-		public int getNumeroVotos() {
-			return numeroVotos;
-		}
-		public void setNumeroVotos(int numeroVotos) {
-			this.numeroVotos = numeroVotos;
-		}
-		
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		
-	}
 	private static final long serialVersionUID = -3657633911205663525L;
 	
 	
+	private Hashtable<String, Integer> candidateList;
+	
 	private class receiveVotes extends Behaviour
 	{
+		private static final long serialVersionUID = 8272372925929726772L;
+		
 		private int numberOfMessages = 0;
 		
 		public receiveVotes(Agent a)
@@ -54,24 +25,31 @@ public class VotingMachine extends Agent
 		@Override
 		public boolean done() {
 			int max = 0;
-			String vencedor = null;
+			String winner = null;
+			
 			if (numberOfMessages == 3) 
 			{
-				Enumeration<String> enumeration = candidates.keys();
-				while(enumeration.hasMoreElements()) {
+				Enumeration<String> enumeration = candidateList.keys();
+				
+				while(enumeration.hasMoreElements()) 
+				{
 		            String key = enumeration.nextElement();
-		            if((int)candidates.get(key) > max){
-		            	vencedor = key;
-		            	max = (int)candidates.get(key);
+		            int candidate_votes = candidateList.get(key);
+		            
+		            if(candidate_votes > max){
+		            	winner = key;
+		            	max = candidate_votes;
 		            }
-		            System.out.println("Candidato: " + key + "\tQuantidade de votos: " + candidates.get(key));
+		            System.out.println("Candidato: " + key + "\tQuantidade de votos: " + candidateList.get(key));
 		        }
-				System.out.println("Vencedor: " + vencedor);
+				
+				System.out.println("Vencedor: " + winner);
 				return true;
 			}
-			
 			return false;
 		}
+		
+		
 		@Override
 		public void action() {
 			ACLMessage message = myAgent.receive();
@@ -81,8 +59,14 @@ public class VotingMachine extends Agent
 				System.out.println("I received a message!");
 				String content = message.getContent();
 
-				//incrementa votos
-				candidates.put(content, (int)candidates.get(content)+1);
+				// as Hashtable values need to be wrapped, Integer needs to be redeclared with the incremented value
+				try
+				{
+					candidateList.put(content, candidateList.get(content) + 1);
+				}catch(NullPointerException e)
+				{
+					System.out.println("Candidate not found");
+				}
 
 				System.out.println("CONTENT: " +  content);
 				System.out.println("REPLY: " + message.getReplyWith());
@@ -97,13 +81,25 @@ public class VotingMachine extends Agent
 		
 	}
 	
+	protected Hashtable<String, Integer> populateCandidates()
+	{
+		Hashtable<String, Integer> _candidates = new Hashtable<String, Integer>();
+		_candidates.put("Jair", 0);
+		_candidates.put("Andre", 0);
+		_candidates.put("Henrique", 0);
+		
+		return _candidates;
+	}
+	
 	
   @Override
   protected void setup() 
   {
 	  System.out.println("Initializing the system");
-	  new CandidatesList();
+	  
+	  candidateList = populateCandidates();
 	  receiveVotes rv = new receiveVotes(this);
+	  
 	  addBehaviour(rv);
   }
   

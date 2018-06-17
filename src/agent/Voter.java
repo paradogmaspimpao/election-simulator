@@ -50,12 +50,12 @@ private static final long serialVersionUID = -6461105609727551278L;
 	
 	@Override
 	protected void setup() {
-		System.out.println("Initializing Voting Machine.");
+		System.out.println("Initializing the Voter agent");
 		addBehaviour(new Vote(this));
 	}
   
 	@Override
 	protected void takeDown() {
-		System.out.println("Closing Voting Machine.");
+		System.out.println("Taking down the Voter agent");
 	}
 }
