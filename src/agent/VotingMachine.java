@@ -134,7 +134,7 @@ public class VotingMachine extends Agent
 				
 				if (!found)
 				{
-					System.out.println("Candidato nao existe, voto nulo");
+					System.out.println("Candidato \"" + content + "\" nao existe, voto nulo");
 					candidateList.put("Nulo", candidateList.get("Nulo") + 1);
 				}
 				// as Hashtable values need to be wrapped, Integer needs to be redeclared with the incremented value
