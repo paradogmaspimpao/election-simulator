@@ -18,14 +18,13 @@ public class CandidateAgent extends Agent
 		dfd.setName(getAID());
 		
 		ServiceDescription sd = new ServiceDescription();
-		sd.setType("Candidate ");
+		sd.setType("candidate");
 		sd.setName(getLocalName() + "-candidate");
 		
 		dfd.addServices(sd);
 		
 		try {
 			DFService.register(this, dfd);
-			System.out.println("I'm registered in the DF");
 		}
 		catch (FIPAException fe) {
 			fe.printStackTrace();

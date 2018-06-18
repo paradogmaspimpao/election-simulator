@@ -6,41 +6,70 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
+import jade.wrapper.AgentContainer;
+import jade.wrapper.AgentController;
+import jade.wrapper.StaleProxyException;
+
 import java.util.*;
 
 public class VotingMachine extends Agent
 {	
 	private static final long serialVersionUID = -3657633911205663525L;
 	
-	private AID[] listaCandi;
+	private AID[] aid_candidates;
 	
+	private Integer numberOfVoters = null;
 	private Hashtable<String, Integer> candidateList;
-	
-	private class peneira extends OneShotBehaviour{
+	private AgentContainer ac = null;
+	private AgentController t1, t2, t3 = null;
+	private class GetCandidates extends Behaviour{
 
-		public peneira(VotingMachine votingMachine) {
+		DFAgentDescription[] result;
+		public GetCandidates(VotingMachine votingMachine) {
 			super(votingMachine);
 		}
 
 		@Override
 		public void action() {
-			
 			DFAgentDescription template = new DFAgentDescription();
 			ServiceDescription sd = new ServiceDescription();
-			sd.setType("Candidate ");
+			sd.setType("candidate");
 			template.addServices(sd);
 			try {
-				 DFAgentDescription[] result = DFService.search(myAgent, template);
-				 listaCandi = new AID[result.length];
+				 result = DFService.search(myAgent, template);
+				 aid_candidates = new AID[result.length];
 				 for (int i = 0; i < result.length; ++i) {
-					 listaCandi[i] = result[i].getName();
-					 System.out.println(listaCandi[i].getName());
-				 }
+					 aid_candidates[i] = result[i].getName();
+					 //System.out.println("--" + listaCandi[i].getLocalName());
+				 	}
 				 }
 				 catch (FIPAException fe) {
-				 fe.printStackTrace();
+					 fe.printStackTrace();
 				 }
 			
+			DFAgentDescription template_v = new DFAgentDescription();
+			ServiceDescription sd_v = new ServiceDescription();
+			sd_v.setType("voter");
+			template_v.addServices(sd_v);
+			
+			DFAgentDescription[] voters = null;
+			try
+			{
+				voters = DFService.search(myAgent, template_v);
+			}catch(FIPAException fe) {
+				fe.printStackTrace();
+			}
+			
+			numberOfVoters = voters.length;
+			
+		}
+		
+		@Override
+		public boolean done() {
+			if (numberOfVoters > 0)
+				return true;
+			else
+				return false;
 		}
 		
 	}
@@ -61,7 +90,7 @@ public class VotingMachine extends Agent
 			int max = 0;
 			String winner = null;
 			
-			if (numberOfMessages == 3) 
+			if (numberOfVoters != null && numberOfMessages == numberOfVoters) 
 			{
 				Enumeration<String> enumeration = candidateList.keys();
 				
@@ -91,20 +120,24 @@ public class VotingMachine extends Agent
 			
 			if (message != null)
 			{
-				System.out.println("I received a message!");
 				String content = message.getContent();
-
-				// as Hashtable values need to be wrapped, Integer needs to be redeclared with the incremented value
-				try
+				boolean found = false;
+				for (int i = 0; i < aid_candidates.length; i++)
 				{
-					candidateList.put(content, candidateList.get(content) + 1);
-				}catch(NullPointerException e)
-				{
-					System.out.println("Candidate not found");
+					if (aid_candidates[i].getLocalName().equals(content))
+					{
+						Integer votes = candidateList.get(content);
+						candidateList.put(content, (votes == null ? 0 : votes) + 1);
+						found = true;
+					}
 				}
-
-				System.out.println("CONTENT: " +  content);
-				System.out.println("REPLY: " + message.getReplyWith());
+				
+				if (!found)
+				{
+					System.out.println("Candidato nao existe, voto nulo");
+					candidateList.put("Nulo", candidateList.get("Nulo") + 1);
+				}
+				// as Hashtable values need to be wrapped, Integer needs to be redeclared with the incremented value
 				numberOfMessages++;
 			}
 			else
@@ -118,11 +151,22 @@ public class VotingMachine extends Agent
 	
 	protected Hashtable<String, Integer> populateCandidates()
 	{
-		
+		try {
+			AgentContainer container = (AgentContainer)getContainerController(); // get a container controller for creating new agents
+			t1 = container.createNewAgent("Temer", "agent.CandidateAgent", null);
+			t2 = container.createNewAgent("Andre", "agent.CandidateAgent", null);
+			t3 = container.createNewAgent("Henrique", "agent.CandidateAgent", null);
+			t1.start();
+			t2.start();
+			t3.start();
+		} catch (StaleProxyException e) {
+			e.printStackTrace();
+		}
 		Hashtable<String, Integer> _candidates = new Hashtable<String, Integer>();
-		_candidates.put("Jair", 0);
+		_candidates.put("Temer", 0);
 		_candidates.put("Andre", 0);
 		_candidates.put("Henrique", 0);
+		_candidates.put("Nulo", 0);
 		
 		return _candidates;
 	}
@@ -138,7 +182,7 @@ public class VotingMachine extends Agent
 	  receiveVotes rv = new receiveVotes(this);
 	  addBehaviour(rv);
 	  
-	  peneira lol = new peneira(this);
+	  GetCandidates lol = new GetCandidates(this);
 	  addBehaviour(lol);
   }
   

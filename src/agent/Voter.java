@@ -4,7 +4,11 @@ import java.util.Date;
 import java.util.Scanner;
 
 import jade.core.*; 
-import jade.core.behaviours.*; 
+import jade.core.behaviours.*;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 
 public class Voter extends Agent{
@@ -50,12 +54,30 @@ private static final long serialVersionUID = -6461105609727551278L;
 	
 	@Override
 	protected void setup() {
-		System.out.println("Initializing the Voter agent");
+		DFAgentDescription dfd = new DFAgentDescription();
+		dfd.setName(getAID());
+		
+		ServiceDescription sd = new ServiceDescription();
+		sd.setType("voter");
+		sd.setName(getLocalName() + "-voter");
+		
+		dfd.addServices(sd);
+		
+		try {
+			DFService.register(this, dfd);
+		}
+		catch (FIPAException fe) {
+			fe.printStackTrace();
+		}
 		addBehaviour(new Vote(this));
 	}
   
 	@Override
 	protected void takeDown() {
-		System.out.println("Taking down the Voter agent");
+		try {
+			DFService.deregister(this);
+		}catch(FIPAException fe) {
+			fe.printStackTrace();
+		}
 	}
 }
