@@ -1,6 +1,10 @@
 package agent;
 import jade.core.*; 
 import jade.core.behaviours.*;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import java.util.*;
 
@@ -8,8 +12,38 @@ public class VotingMachine extends Agent
 {	
 	private static final long serialVersionUID = -3657633911205663525L;
 	
+	private AID[] listaCandi;
 	
 	private Hashtable<String, Integer> candidateList;
+	
+	private class peneira extends OneShotBehaviour{
+
+		public peneira(VotingMachine votingMachine) {
+			super(votingMachine);
+		}
+
+		@Override
+		public void action() {
+			
+			DFAgentDescription template = new DFAgentDescription();
+			ServiceDescription sd = new ServiceDescription();
+			sd.setType("Candidate ");
+			template.addServices(sd);
+			try {
+				 DFAgentDescription[] result = DFService.search(myAgent, template);
+				 listaCandi = new AID[result.length];
+				 for (int i = 0; i < result.length; ++i) {
+					 listaCandi[i] = result[i].getName();
+					 System.out.println(listaCandi[i].getName());
+				 }
+				 }
+				 catch (FIPAException fe) {
+				 fe.printStackTrace();
+				 }
+			
+		}
+		
+	}
 	
 	private class receiveVotes extends Behaviour
 	{
@@ -40,7 +74,7 @@ public class VotingMachine extends Agent
 		            	winner = key;
 		            	max = candidate_votes;
 		            }
-		            System.out.println("Candidato: " + key + "\tQuantidade de votos: " + candidateList.get(key));
+		            System.out.println("Candidato: " + key + "\t\tQuantidade de votos: " + candidateList.get(key));
 		        }
 				
 				System.out.println("Vencedor: " + winner);
@@ -49,9 +83,10 @@ public class VotingMachine extends Agent
 			return false;
 		}
 		
-		
 		@Override
 		public void action() {
+			
+			
 			ACLMessage message = myAgent.receive();
 			
 			if (message != null)
@@ -83,6 +118,7 @@ public class VotingMachine extends Agent
 	
 	protected Hashtable<String, Integer> populateCandidates()
 	{
+		
 		Hashtable<String, Integer> _candidates = new Hashtable<String, Integer>();
 		_candidates.put("Jair", 0);
 		_candidates.put("Andre", 0);
@@ -98,9 +134,12 @@ public class VotingMachine extends Agent
 	  System.out.println("Initializing the system");
 	  
 	  candidateList = populateCandidates();
-	  receiveVotes rv = new receiveVotes(this);
 	  
+	  receiveVotes rv = new receiveVotes(this);
 	  addBehaviour(rv);
+	  
+	  peneira lol = new peneira(this);
+	  addBehaviour(lol);
   }
   
   @Override
